@@ -6,7 +6,7 @@ class Tag extends LightElement {
     <button (click)="this.remove()" [disabled]="!this.tagId" >&#215;</button>
     <button *if="!!this.tagId" (click)="this.hello();">Not new: {{ this.label }} {{ this._counter }}</button>
     <ul *if="this.elements">
-        <li *for="let item of this.elements"> item </li>
+        <li *for="let item of this.elements">  item  </li>
     </ul>
   `;
 
@@ -26,11 +26,13 @@ class Tag extends LightElement {
   }
 
   remove() {
+    console.log(`Remove ${this.tagId}`);
     this.tagId = null;
   }
 
   save() {
     this.tagId = 1234;
+    console.log(`Save 1234`);
   }
 }
 

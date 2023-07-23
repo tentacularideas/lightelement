@@ -25,7 +25,7 @@ class LightElementShell extends HTMLElement {
    */
 
   connectedCallback() {
-    this._element.propagateChanges();
+    this._element.update();
   }
 
   disconnectedCallback() {}
@@ -114,7 +114,7 @@ class ForStatement extends Statement {
     return ["elements"];
   }
 
-  * resolve() {
+  *resolve() {
     for (let item of this.#fn()) {
       yield item;
     }
@@ -122,10 +122,12 @@ class ForStatement extends Statement {
 }
 
 class DomMutation {
-  _tag;
+  _lightElement;
+  _node;
 
-  constructor(tag) {
-    this._tag = tag;
+  constructor(lightElement, node) {
+    this._lightElement = lightElement;
+    this._node = node;
   }
 
   perform() {}
@@ -135,8 +137,8 @@ class AttributeDomMutation extends DomMutation {
   _attribute;
   _statement;
 
-  constructor(tag, attribute, statement) {
-    super(tag);
+  constructor(lightElement, node, attribute, statement) {
+    super(lightElement, node);
     this._attribute = attribute;
     this._statement = statement;
   }
@@ -145,13 +147,13 @@ class AttributeDomMutation extends DomMutation {
     const value = this._statement.resolve();
 
     if (value === true) {
-      this._tag.setAttribute(this._attribute, "");
+      this._node.setAttribute(this._attribute, "");
     }
     else if (value === false) {
-      this._tag.removeAttribute(this._attribute);
+      this._node.removeAttribute(this._attribute);
     }
     else {
-      this._tag.setAttribute(this._attribute, value);
+      this._node.setAttribute(this._attribute, value);
     }
   }
 }
@@ -159,39 +161,48 @@ class AttributeDomMutation extends DomMutation {
 class TextContentDomMutation extends DomMutation {
   _statement;
 
-  constructor(node, statement) {
-    super(node);
+  constructor(lightElement, node, statement) {
+    super(lightElement, node);
     this._statement = statement;
   }
 
   perform() {
-    this._tag.textContent = `${this._statement.resolve()}`;
+    this._node.textContent = `${this._statement.resolve()}`;
   }
 }
 
 class IfDomMutation extends DomMutation {
   _statement;
   _hook;
+  _template;
+  _scope;
 
-  constructor(tag, statement) {
-    super(tag);
+  constructor(lightElement, node, statement) {
+    super(lightElement, node);
     this._statement = statement;
+    this._template = node;
+    this._node = null;
+    this._scope = new Scope(lightElement);
   }
 
   perform() {
     // TODO: First call, to be optimized
     if (!this._hook) {
       this._hook = document.createComment("*if");
-      this._tag.replaceWith(this._hook);
+      this._template.replaceWith(this._hook);
     }
 
     const value = this._statement.resolve();
 
-    if (!this._tag.isConnected && value) {
-      this._hook.after(this._tag);
+    if (value && !this._node) {
+      this._node = this._template.cloneNode(true);
+      LightElement.processDomNode(this._scope, this._lightElement, this._node, false);
+      this._hook.after(this._node);
     }
-    else if (this._tag.isConnected && !value) {
-      this._tag.remove();
+
+    else if (!value && this._node) {
+      this._node.remove();
+      this._node = null;
     }
   }
 }
@@ -200,18 +211,20 @@ class ForDomMutation extends DomMutation {
   _statement;
   _hook;
   _tags;
+  _scope;
 
-  constructor(tag, statement) {
-    super(tag);
+  constructor(lightElement, node, statement) {
+    super(lightElement, node);
     this._statement = statement;
     this._hook = null;
     this._tags = [];
+    this._scope = new Scope(lightElement);
   }
 
   perform() {
     if (!this._hook) {
       this._hook = document.createComment("*for");
-      this._tag.replaceWith(this._hook);
+      this._node.replaceWith(this._hook);
     }
 
     this._tags.forEach((tag) => {
@@ -219,13 +232,102 @@ class ForDomMutation extends DomMutation {
     });
 
     for (let item of this._statement.resolve()) {
-      const tag = this._tag.cloneNode(true);
-
-      // TODO: process tag
+      const tag = this._node.cloneNode(true);
+      const scope = this._scope.createVariation("item", item);
+      
+      LightElement.processDomNode(scope, this._lightElement, tag, false);
 
       this._tags.push(tag);
       this._hook.after(tag);
     }
+  }
+}
+
+class Scope {
+  #scopes;
+  #parentScope;
+  #mutations;
+  #instance;
+  #variables;
+  
+  constructor(instance) {
+    this.#scopes = new Set();
+    this.#parentScope = null;
+    this.#mutations = new Map();
+    this.#instance = instance;
+    this.#variables = new Map();
+  }
+  
+  addScope(scope) {
+    this.#scopes.add(scope);
+    scope.setParentScope(this);
+  }
+  
+  removeScope(scope) {
+    this.#scopes.remove(scope);
+  }
+  
+  setParentScope(scope) {
+    this.#parentScope = scope;
+  }
+  
+  addMutation(variable, mutation) {
+    if (this.#mutations.has(variable)) {
+      this.#mutations.get(variable).push(mutation);
+    }
+    else {
+      this.#mutations.set(variable, [mutation]);
+    }
+  }
+  
+  addMutations(variable, mutations) {
+    if (this.#mutations.has(variable)) {
+      this.#mutations.get(variable).push(...mutations);
+    }
+    else {
+      this.#mutations.set(variable, mutations);
+    }
+  }
+  
+  setVariable(name, value) {
+    this.#variables.set(name, value);
+  }
+  
+  getVariables() {
+    return Object.fromEntries(this.#variables.entries());
+  }
+  
+  createStatement(body) {
+    return (new Function(body)).bind(this.#instance);
+  }
+  
+  createVariation(variable, value) {
+    const variation = new Scope(this.#instance);
+    variation.setVariable(name, value);
+    this.addScope(variation);
+    return variation;
+  }
+  
+  update(variable = null) {
+    if (variable == null) {
+      for (let mutationVariable of this.#mutations.keys()) {
+        this.update(mutationVariable);
+      }
+    
+      return;
+    }
+    
+    const mutations = this.#mutations.get(variable);
+    
+    if (mutations && mutations.length) {
+      mutations.forEach((mutation) => {
+        mutation.perform();
+      });
+    }
+    
+    this.#scopes.forEach((scope) => {
+      scope.update(variable);
+    });
   }
 }
 
@@ -236,6 +338,7 @@ class LightElement {
 
   #dom;
   #attributesDependencies;
+  #scope;
 
   constructor(shell) {
     this.#attributesDependencies = new Map(
@@ -244,6 +347,7 @@ class LightElement {
       []
     );
 
+    this.#scope = new Scope(this);
     this.#dom = this.#createDom();
   }
 
@@ -258,8 +362,12 @@ class LightElement {
   getDom() {
     return this.#dom;
   }
+  
+  update(attribute = null) {
+    this.#scope.update(attribute);
+  }
 
-  propagateChanges(attribute = null) {
+  /*propagateChanges(attribute = null) {
     if (attribute == null) {
       for (let attribute of this.#attributesDependencies.keys()) {
         this.propagateChanges(attribute);
@@ -275,14 +383,14 @@ class LightElement {
     this.#attributesDependencies.get(attribute).forEach((domMutation) => {
       domMutation.perform();
     });
-  }
+  }*/
 
-  static processDomNode(node, keepStarUnprocessed = true) {
+  static processDomNode(scope, leInstance, node, keepStarUnprocessed = true) {
     if (![Node.TEXT_NODE, Node.ELEMENT_NODE].includes(node.nodeType)) {
       return null;
     }
 
-    const mutations = new Map();
+    let fullyProcessNode = true;
 
     if (node.nodeType == Node.TEXT_NODE) {
       const re = /\{\{(?<statement>[^\}]*)\}\}/;
@@ -296,15 +404,10 @@ class LightElement {
           variableNode.splitText(match[0].length);
         }
 
-        const statement = new ReturnStatement(match[1].trim(), this);
-        const domMutation = new TextContentDomMutation(variableNode, statement);
+        const statement = new ReturnStatement(match[1].trim(), leInstance);
+        const domMutation = new TextContentDomMutation(leInstance, variableNode, statement);
         statement.getDependencies().forEach((attribute) => {
-          if (mutations.has(attribute)) {
-            mutations.get(attribute).push(domMutation);
-          }
-          else {
-            mutations.set(attribute, [domMutation]);
-          }
+          scope.addMutation(attribute, domMutation);
         });
       }
     }
@@ -312,8 +415,8 @@ class LightElement {
       let hasStarAttribute = false;
       const attributes = [];
 
-      for (let j = 0; j < tag.attributes.length; j++) {
-        const attribute = tag.attributes.item(j);
+      for (let j = 0; j < node.attributes.length; j++) {
+        const attribute = node.attributes.item(j);
         const match = attribute.name.match(/^(?<type>[\*\(\[])(?<name>\w+)[\)\]]?$/);
 
         if (!match) {
@@ -321,11 +424,13 @@ class LightElement {
         }
 
         const attributeDefintion = {
+          attributeName: attribute.name,
           type: match.groups.type,
           name: match.groups.name,
+          attributeValue: attribute.value,
         };
 
-        if (match.groups.type == "*") {
+        if (attributeDefintion.type == "*") {
           if (hasStarAttribute) {
             throw new Error(`Element "${node.tagName}" has more than one *attribute. Only zero to one are allowed.`);
           }
@@ -337,135 +442,72 @@ class LightElement {
           attributes.push(attributeDefintion);
         }
       }
+      
+      fullyProcessNode = !(hasStarAttribute && keepStarUnprocessed);
 
-      attributes.forEach(({ type, name }) => {
-        console.log(type, name);
+      attributes.forEach(({ attributeName, type, name, attributeValue }) => {
+        if (!fullyProcessNode && type != "*") {
+          return;
+        }
+        
+        let statement = null;
+        let domMutation = null;
+        
+        switch (type) {
+          case "*": {
+            if (name == "if") {
+              statement = new ReturnStatement(attributeValue, leInstance);
+              domMutation = new IfDomMutation(leInstance, node, statement);
+            }
+            else if (name == "for") {
+              statement = new ForStatement(attributeValue, leInstance);
+              domMutation = new ForDomMutation(leInstance, node, statement);
+            }
+            
+            break;
+          }
+          
+          case "[": {
+            statement = new ReturnStatement(attributeValue, leInstance);
+            domMutation = new AttributeDomMutation(
+              leInstance,
+              node,
+              name,
+              statement,
+            );
+            
+            break;
+          }
+          
+          case "(": {
+            node.addEventListener(name, new Function("event", attributeValue).bind(leInstance));
+            
+            break;
+          }
+        }
+        
+        node.removeAttribute(attributeName);
+        
+        if (statement && domMutation) {
+          statement.getDependencies().forEach((variable) => {
+            scope.addMutation(variable, domMutation);
+          });
+        }
       });
     }
 
-    if (!keepStarUnprocessed) {
-      for (let node of tag.childNodes) {
-        const childMutations = LightElement.processDomNode(node, keepStarUnprocessed);
-
-        if (!childMutations) {
-          continue;
-        }
-
-        childMutations.forEach((domMutation, attribute) => {
-          if (mutations.has(attribute)) {
-            mutations.get(attribute).push(domMutation);
-          }
-          else {
-            mutations.set(attribute, [domMutation]);
-          }
-        });
-      }
-    }
-
-    return mutations;
-  }
-
-  #processDomTag(tag) {
-    const attributesToRemove = [];
-
-    for (let j = 0; j < tag.attributes.length; j++) {
-      const attribute = tag.attributes.item(j);
-      const match = attribute.name.match(/^(?<type>[\*\(\[])(?<name>\w+)[\)\]]?$/);
-
-      if (!match) {
-        continue;
-      }
-
-      let statement = null;
-      let domMutation = null;
-
-      if (match.groups.type == "*") {
-        attributesToRemove.push(attribute.name);
-
-        switch (match.groups.name) {
-          case "if": {
-            statement = new ReturnStatement(attribute.value, this);
-            domMutation = new IfDomMutation(tag, statement);
-            break;
-          }
-
-          case "for": {
-            statement = new ForStatement(attribute.value, this);
-            domMutation = new ForDomMutation(tag, statement);
-            break;
-          }
-        }
-      }
-      else if (match.groups.type == "(") {
-        attributesToRemove.push(attribute.name);
-        tag.addEventListener(match.groups.name, new Function("event", attribute.value).bind(this));
-      }
-      else if (match.groups.type == "[") {
-        statement = new ReturnStatement(attribute.value, this);
-        domMutation = new AttributeDomMutation(
-          tag,
-          match.groups.name,
-          statement,
-        );
-      }
-
-      if (statement && domMutation) {
-        statement.getDependencies().forEach((attribute) => {
-          if (!this.#attributesDependencies.has(attribute)) {
-            return;
-          }
-
-          this.#attributesDependencies.get(attribute).push(domMutation);
-        });
-      }
-    }
-
-    attributesToRemove.forEach((attribute) => {
-      tag.removeAttribute(attribute);
-    });
-
-    // Content
-    for (let node of tag.childNodes) {
-      if (node.nodeType == Node.ELEMENT_NODE) {
-        this.#processDomTag(node);
-      }
-
-      if (node.nodeType != Node.TEXT_NODE) {
-        continue;
-      }
-
-      const re = /\{\{(?<statement>[^\}]*)\}\}/;
-      const match = re.exec(node.textContent);
-
-      if (match) {
-        const index = node.textContent.indexOf(match[0]);
-        const variableNode = (index > 0) ? node.splitText(index) : node;
-
-        if (variableNode.length > match[0].length) {
-          variableNode.splitText(match[0].length);
-        }
-
-        const statement = new ReturnStatement(match[1].trim(), this);
-        const domMutation = new TextContentDomMutation(variableNode, statement);
-        statement.getDependencies().forEach((attribute) => {
-          if (!this.#attributesDependencies.has(attribute)) {
-            return;
-          }
-
-          this.#attributesDependencies.get(attribute).push(domMutation);
-        });
+    if (fullyProcessNode) {
+      for (let childNode of node.childNodes) {
+        LightElement.processDomNode(scope, leInstance, childNode, keepStarUnprocessed);
       }
     }
   }
-
+  
   #createDom() {
     const dom = new DOMParser().parseFromString(this.constructor.html, "text/html");
     const body = dom.documentElement.querySelector("body");
-
-    for (let i = 0; i < body.children.length; i++) {
-      const tag = body.children.item(i);
-      this.#processDomTag(tag);
-    }
+    
+    LightElement.processDomNode(this.#scope, this, body);
 
     return body;
   }
@@ -496,7 +538,7 @@ class LightElement {
             },
             set(value) {
               oValue = value;
-              oThis.propagateChanges(attribute);
+              oThis.update(attribute);
             },
             enumerable: true,
             configurable: true,
