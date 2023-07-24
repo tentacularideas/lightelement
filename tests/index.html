@@ -8,6 +8,81 @@
     <script src="../src/lightelement.js"></script>
   </head>
   <body>
-    <script src="./main.js"></script>
+    <h1>Summary</h1>
+    <table>
+      <thead>
+        <th>Test</th>
+        <th>Status</th>
+      </thead>
+      <tbody id="summary">
+      </tbody>
+    </table>
+    <h1>Tests</h1>
+    <script>
+      const keepTestOutputs = true;
+      const tests = [
+        "test-001-text-dom-mutation.js",
+      ];
+      
+      function updateTestSummary(testName, success = undefined) {
+        const summaryTestId = `summary-${testName}`;
+        let tr = document.getElementById(summaryTestId);
+        let tdStatus;
+        
+        if (tr) {
+          tdStatus = tr.querySelector("td.status");
+        }
+        else {
+          const tbody = document.getElementById("summary");
+          tr = document.createElement("tr");
+          tr.setAttribute("id", summaryTestId);
+          tbody.append(tr);
+          
+          const tdTest = document.createElement("td");
+          tdTest.innerText = testName;
+          
+          tdStatus = document.createElement("td");
+          tdStatus.setAttribute("class", "status");
+        
+          tr.append(tdTest);
+          tr.append(tdStatus);
+        }
+      
+        tdStatus.style = `color: ${success == undefined ? "grey" : (success ? "green" : "red")};`;
+        tdStatus.innerText = success == undefined ? "Running..." : (success ? "Success" : "Failure");
+      }
+      
+      function run(testName, path = "./") {
+        const rootNode = document.createElement("div");
+        rootNode.setAttribute("id", testName);
+        
+        const title = document.createElement("h2");
+        title.innerText = `${testName}`;
+        rootNode.append(title);
+        
+        document.body.append(rootNode);
+        
+        updateTestSummary(testName);
+        
+        import(`./${testName}`).then((test) => {
+          const rootNode = document.getElementById(testName);
+          test.setup(rootNode);
+          if (!test.expect(rootNode)) {
+            updateTestSummary(testName, false);
+          }
+          else {
+            updateTestSummary(testName, true);
+          }
+          
+          if (!keepTestOutputs) {
+            rootNode.remove();
+          }
+        });
+      }
+      
+      for (let testName of tests) {
+        run(testName);
+      }
+    </script>
   </body>
 </html>

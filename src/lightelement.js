@@ -17,6 +17,14 @@ class LightElementShell extends HTMLElement {
 
     this.shadowRoot.append(this._element.getDom());
   }
+  
+  get element() {
+    return this._element;
+  }
+  
+  get innerHTML() {
+    return this.shadowRoot.querySelector("body").innerHTML;
+  }
 
   /*
    * Automatically generated.
