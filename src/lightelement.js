@@ -22,8 +22,12 @@ class LightElementShell extends HTMLElement {
     return this._element;
   }
   
+  get dom() {
+    return this.shadowRoot.querySelector("body");
+  }
+  
   get innerHTML() {
-    return this.shadowRoot.querySelector("body").innerHTML;
+    return this.dom.innerHTML;
   }
 
   /*

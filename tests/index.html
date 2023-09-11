@@ -19,9 +19,13 @@
     </table>
     <h1>Tests</h1>
     <script>
-      const keepTestOutputs = true;
+      const keepSuccessfulTestOutputs = true;
       const tests = [
         "test-001-text-dom-mutation.js",
+        "test-002-attribute-mutation.js",
+        "test-003-event-trigger.js",
+        "test-004-if-dom-mutation.js",
+        "test-005-for-dom-mutation.js",
       ];
       
       function updateTestSummary(testName, success = undefined) {
@@ -67,14 +71,10 @@
         import(`./${testName}`).then((test) => {
           const rootNode = document.getElementById(testName);
           test.setup(rootNode);
-          if (!test.expect(rootNode)) {
-            updateTestSummary(testName, false);
-          }
-          else {
-            updateTestSummary(testName, true);
-          }
+          const success = test.expect(rootNode);
+          updateTestSummary(testName, success);
           
-          if (!keepTestOutputs) {
+          if (success || !keepSuccessfulTestOutputs) {
             rootNode.remove();
           }
         });
