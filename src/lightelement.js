@@ -290,6 +290,9 @@ class Scope {
     else {
       this.#mutations.set(variable, [mutation]);
     }
+
+    // WARN: may run multiple time if a mutation is link to multiple variables
+    mutation.perform();
   }
   
   addMutations(variable, mutations) {
@@ -298,6 +301,13 @@ class Scope {
     }
     else {
       this.#mutations.set(variable, mutations);
+    }
+
+    // WARN: may run multiple time if a mutation is link to multiple variables
+    if (mutations && mutations.length) {
+      mutations.forEach((mutation) => {
+        mutation.perform();
+      });
     }
   }
   
@@ -315,7 +325,7 @@ class Scope {
   
   createVariation(variable, value) {
     const variation = new Scope(this.#instance);
-    variation.setVariable(name, value);
+    variation.setVariable(variable, value);
     this.addScope(variation);
     return variation;
   }
