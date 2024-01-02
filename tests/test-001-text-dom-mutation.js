@@ -1,4 +1,5 @@
 const expectedValue = "Hello";
+const expectedValueAsync = "Hello again!";
 
 class Test001 extends LightElement {
   static tagName = "test-001";
@@ -8,6 +9,10 @@ class Test001 extends LightElement {
     `;
     
   text = expectedValue;
+
+  asyncUpdate() {
+    this.text = expectedValueAsync;
+  }
 }
 
 Test001.register();
@@ -19,9 +24,20 @@ function setup(rootNode) {
 
 function expect(rootNode) {
   const node = rootNode.querySelector(Test001.tagName);
-  const innerHTML = node.innerHTML.trim();
+  let innerHTML = node.innerHTML.trim();
   
-  return innerHTML == expectedValue;
+  const test1 = innerHTML == expectedValue;
+
+  if (!test1) {
+    return test1;
+  }
+
+  node.element.asyncUpdate();
+  innerHTML = node.innerHTML.trim();
+
+  const test2 = innerHTML == expectedValueAsync;
+
+  return test1 && test2;
 }
 
 export {

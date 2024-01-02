@@ -52,14 +52,15 @@ class LightElementShell extends HTMLElement {
     this._element[internalAttribute] = value;
   }
 }
-
 class Statement {
   _target;
   _statement;
+  _scope;
 
-  constructor(statement, target = null) {
+  constructor(statement, target = null, scope = null) {
     this._target = target;
     this._statement = statement;
+    this._scope = scope;
   }
 
   resolve() {}
@@ -68,11 +69,11 @@ class Statement {
 class ReturnStatement extends Statement {
   #fn;
 
-  constructor(statement, target = null) {
-    super(statement, target);
+  constructor(statement, target = null, scope = null) {
+    super(statement, target, scope);
 
     // TODO: handle more complex cases
-    this.#fn = (new Function(`return (${this._statement || null});`)).bind(this._target);
+    this.#fn = this._scope.createStatement(`return (${this._statement || null});`);
   }
 
   getDependencies() {
@@ -82,7 +83,8 @@ class ReturnStatement extends Statement {
 
     (new Function(this._statement)).bind(new Proxy(this._target, {
       get(target, property) {
-        dependencies.push(property);
+        dependencies.push(`this.${property}`);
+        //dependencies.push(property);
         return target[property];
       },
     }))();
@@ -100,21 +102,27 @@ class ForStatement extends Statement {
   #variable;
   #iterable;
 
-  constructor(statement, target = null) {
-    super(statement, target);
+  constructor(statement, target = null, scope = null) {
+    super(statement, target, scope);
 
     const parsedStatement = this.constructor.#parseStatement(statement);
     this.#variable = parsedStatement.variable;
     this.#iterable = parsedStatement.iterable;
 
     const GeneratorFunction = function*() {}.constructor;
-    this.#fn = (new GeneratorFunction(`for (let item of ${this.#iterable} || []) { yield item; }`)).bind(this._target);
+    this.#fn = (new GeneratorFunction(`for (let ${this.#variable} of ${this.#iterable} || []) { yield ${this.#variable}; }`)).bind(this._target);
   }
 
   static #parseStatement(statement) {
+    const matches = statement.match(/^\s*let\s+(?<variable>[a-zA-Z][a-zA-Z0-9_]*)\s+of\s+(?<iterable>[a-zA-Z][a-zA-Z0-9_\.\[\]\'\"]*)\s*$/);
+
+    if (!matches) {
+      throw new Error(`Invalid *for statement: "${statement}".`);
+    }
+
     return {
-      variable: "item",
-      iterable: "this.elements",
+      variable: matches.groups["variable"],
+      iterable: matches.groups["iterable"],
     };
   }
 
@@ -123,7 +131,7 @@ class ForStatement extends Statement {
   }
 
   getDependencies() {
-    return ["elements"];
+    return [this.#iterable];
   }
 
   *resolve() {
@@ -245,8 +253,7 @@ class ForDomMutation extends DomMutation {
 
     for (let item of this._statement.resolve()) {
       const tag = this._node.cloneNode(true);
-      const scope = this._scope.createVariation("item", item);
-      
+      const scope = this._scope.createVariation(this._statement.getVariableName(), item);
       LightElement.processDomNode(scope, this._lightElement, tag, false);
 
       this._tags.push(tag);
@@ -385,27 +392,9 @@ class LightElement {
     return this.#dom;
   }
   
-  update(attribute = null) {
-    this.#scope.update(attribute);
+  update(variable = null) {
+    this.#scope.update(variable);
   }
-
-  /*propagateChanges(attribute = null) {
-    if (attribute == null) {
-      for (let attribute of this.#attributesDependencies.keys()) {
-        this.propagateChanges(attribute);
-      }
-
-      return;
-    }
-
-    if (!this.#attributesDependencies.has(attribute)) {
-      return;
-    }
-
-    this.#attributesDependencies.get(attribute).forEach((domMutation) => {
-      domMutation.perform();
-    });
-  }*/
 
   static processDomNode(scope, leInstance, node, keepStarUnprocessed = true) {
     if (![Node.TEXT_NODE, Node.ELEMENT_NODE].includes(node.nodeType)) {
@@ -426,7 +415,7 @@ class LightElement {
           variableNode.splitText(match[0].length);
         }
 
-        const statement = new ReturnStatement(match[1].trim(), leInstance);
+        const statement = new ReturnStatement(match[1].trim(), leInstance, scope);
         const domMutation = new TextContentDomMutation(leInstance, variableNode, statement);
         statement.getDependencies().forEach((attribute) => {
           scope.addMutation(attribute, domMutation);
@@ -478,11 +467,11 @@ class LightElement {
         switch (type) {
           case "*": {
             if (name == "if") {
-              statement = new ReturnStatement(attributeValue, leInstance);
+              statement = new ReturnStatement(attributeValue, leInstance, scope);
               domMutation = new IfDomMutation(leInstance, node, statement);
             }
             else if (name == "for") {
-              statement = new ForStatement(attributeValue, leInstance);
+              statement = new ForStatement(attributeValue, leInstance, scope);
               domMutation = new ForDomMutation(leInstance, node, statement);
             }
             
@@ -490,7 +479,7 @@ class LightElement {
           }
           
           case "[": {
-            statement = new ReturnStatement(attributeValue, leInstance);
+            statement = new ReturnStatement(attributeValue, leInstance, scope);
             domMutation = new AttributeDomMutation(
               leInstance,
               node,
@@ -560,7 +549,9 @@ class LightElement {
             },
             set(value) {
               oValue = value;
-              oThis.update(attribute);
+
+              // Trigger the scope variable update
+              oThis.update(`this.${attribute}`);
             },
             enumerable: true,
             configurable: true,
