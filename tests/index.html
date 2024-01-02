@@ -74,7 +74,7 @@
           const success = test.expect(rootNode);
           updateTestSummary(testName, success);
           
-          if (success || !keepSuccessfulTestOutputs) {
+          if (success && !keepSuccessfulTestOutputs) {
             rootNode.remove();
           }
         });

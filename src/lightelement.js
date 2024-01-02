@@ -77,19 +77,7 @@ class ReturnStatement extends Statement {
   }
 
   getDependencies() {
-    // Extract dependencies from statement by running it with a Proxy.
-    // WARNING: It only works with simple straightforward statements. 
-    const dependencies = [];
-
-    (new Function(this._statement)).bind(new Proxy(this._target, {
-      get(target, property) {
-        dependencies.push(`this.${property}`);
-        //dependencies.push(property);
-        return target[property];
-      },
-    }))();
-
-    return dependencies;
+    return this._scope.getDependenciesFromStatement(this._statement);
   }
 
   resolve() {
@@ -256,8 +244,14 @@ class ForDomMutation extends DomMutation {
       const scope = this._scope.createVariation(this._statement.getVariableName(), item);
       LightElement.processDomNode(scope, this._lightElement, tag, false);
 
+      if (this._tags.length) {
+        this._tags[this._tags.length - 1].after(tag);
+      }
+      else {
+        this._hook.after(tag);
+      }
+      
       this._tags.push(tag);
-      this._hook.after(tag);
     }
   }
 }
@@ -327,7 +321,36 @@ class Scope {
   }
   
   createStatement(body) {
-    return (new Function(body)).bind(this.#instance);
+    const variables = [];
+    for (let variable of this.#variables.keys()) {
+      // TODO: Escape "
+      variables.push(`const ${variable} = "${this.#variables.get(variable)}";`);
+    }
+    const functionBody = variables.join("") + body;
+    return (new Function(functionBody)).bind(this.#instance);
+  }
+
+  getDependenciesFromStatement(body) {
+    // Extract dependencies from statement by running it with a Proxy.
+    // WARNING: It only works with simple straightforward statements. 
+    const dependencies = [];
+
+    const variables = [];
+    for (let variable of this.#variables.keys()) {
+      // TODO: Escape "
+      variables.push(`const ${variable} = "${this.#variables.get(variable)}";`);
+      dependencies.push(variable);
+    }
+    const functionBody = variables.join("") + body;
+
+    (new Function(functionBody)).bind(new Proxy(this.#instance, {
+      get(target, property) {
+        dependencies.push(`this.${property}`);
+        return target[property];
+      },
+    }))();
+
+    return dependencies;
   }
   
   createVariation(variable, value) {

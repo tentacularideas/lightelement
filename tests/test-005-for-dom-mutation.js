@@ -28,7 +28,10 @@ function expect(rootNode) {
   const element0 = dom.querySelector("ul.not-empty li");
   const element1 = dom.querySelector("ul.empty li");
   
-  return !element1 && !!element0;
+  const notEmptyLi = Array.from(dom.querySelectorAll("ul.not-empty li"));
+  const success = notEmptyLi.map((node) => node.innerHTML).join("") == ["one", "two", "three"].join("");
+
+  return !element1 && !!element0 && success;
 }
 
 export {
