@@ -239,6 +239,8 @@ class ForDomMutation extends DomMutation {
       tag.remove();
     });
 
+    this._tags = [];
+
     for (let item of this._statement.resolve()) {
       const tag = this._node.cloneNode(true);
       const scope = this._scope.createVariation(this._statement.getVariableName(), item);

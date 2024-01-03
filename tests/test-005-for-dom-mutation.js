@@ -1,3 +1,5 @@
+const expectedValue = ["one", "two", "three"];
+const expectedValueAsync = ["two", "three", "four"];
 class Test005 extends LightElement {
   static tagName = "test-005";
   static css = ``;
@@ -12,7 +14,11 @@ class Test005 extends LightElement {
     `;
 
   noElements = [];
-  elements = ["one", "two", "three"];
+  elements = expectedValue;
+
+  asyncUpdate() {
+    this.elements = expectedValueAsync;
+  }
 }
 
 Test005.register();
@@ -29,9 +35,15 @@ function expect(rootNode) {
   const element1 = dom.querySelector("ul.empty li");
   
   const notEmptyLi = Array.from(dom.querySelectorAll("ul.not-empty li"));
-  const success = notEmptyLi.map((node) => node.innerHTML).join("") == ["one", "two", "three"].join("");
+  const correctLiValues = notEmptyLi.map((node) => node.innerHTML).join("") == expectedValue.join("");
 
-  return !element1 && !!element0 && success;
+  const test1 = !element1 && !!element0 && correctLiValues;
+
+  node.element.asyncUpdate();
+  const notEmptyLiAsync = Array.from(dom.querySelectorAll("ul.not-empty li"));
+  const test2 = notEmptyLiAsync.map((node) => node.innerHTML).join("") == expectedValueAsync.join("");
+
+  return test1 && test2;
 }
 
 export {

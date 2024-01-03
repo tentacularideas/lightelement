@@ -19,7 +19,7 @@
     </table>
     <h1>Tests</h1>
     <script>
-      const keepSuccessfulTestOutputs = true;
+      const keepSuccessfulTestOutputs = false;
       const tests = [
         "test-001-text-dom-mutation.js",
         "test-002-attribute-mutation.js",
@@ -67,11 +67,15 @@
         document.body.append(rootNode);
         
         updateTestSummary(testName);
-        
+
         import(`./${testName}`).then((test) => {
           const rootNode = document.getElementById(testName);
+
+          console.groupCollapsed(testName);
           test.setup(rootNode);
           const success = test.expect(rootNode);
+          console.groupEnd();
+
           updateTestSummary(testName, success);
           
           if (success && !keepSuccessfulTestOutputs) {
