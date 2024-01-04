@@ -5,7 +5,7 @@ class Test005 extends LightElement {
   static css = ``;
   static html = `
     <ul class="not-empty">
-      <li *for="let notEmpty of this.elements">{{ notEmpty }}</li>
+      <li *for="let notEmpty of this.elements">{{ notEmpty }}<input type="text" [value]="notEmpty" /></li>
     </ul>
     
     <ul class="empty">
@@ -35,15 +35,18 @@ function expect(rootNode) {
   const element1 = dom.querySelector("ul.empty li");
   
   const notEmptyLi = Array.from(dom.querySelectorAll("ul.not-empty li"));
-  const correctLiValues = notEmptyLi.map((node) => node.innerHTML).join("") == expectedValue.join("");
+  const correctLiValues = notEmptyLi.map((node) => node.innerText).join("") == expectedValue.join("");
 
   const test1 = !element1 && !!element0 && correctLiValues;
 
+  const liInputText = Array.from(dom.querySelectorAll("ul.not-empty li input[type=text]"));
+  const test2 = liInputText.map((node) => node.value).join("") == expectedValue.join("");
+
   node.element.asyncUpdate();
   const notEmptyLiAsync = Array.from(dom.querySelectorAll("ul.not-empty li"));
-  const test2 = notEmptyLiAsync.map((node) => node.innerHTML).join("") == expectedValueAsync.join("");
+  const test3 = notEmptyLiAsync.map((node) => node.innerText).join("") == expectedValueAsync.join("");
 
-  return test1 && test2;
+  return test1 && test2 && test3;
 }
 
 export {
