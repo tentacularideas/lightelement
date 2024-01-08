@@ -8,14 +8,7 @@ class LightElementShell extends HTMLElement {
   constructor() {
     super();
     this._element = new this.constructor._elementClass(this);
-
-    this.attachShadow({ mode: "open" }).innerHTML = `
-        <style type="text/css">
-        ${this._element.getCss()}
-        </style>
-        `;
-
-    this.shadowRoot.append(this._element.getDom());
+    this.attachShadow({ mode: "open" }).append(this._element.getDom());
   }
   
   get element() {
@@ -405,7 +398,7 @@ class LightElement {
     this.#dom = this.#createDom();
   }
 
-  getCss() {
+  getCssTemplate() {
     return this.constructor.css;
   }
 
@@ -540,7 +533,10 @@ class LightElement {
   }
   
   #createDom() {
-    const dom = new DOMParser().parseFromString(this.constructor.html, "text/html");
+    const dom = new DOMParser().parseFromString(
+      `<html><head></head><body><style type="text/css">${this.constructor.css}</style>${this.constructor.html}</body></html>`,
+      "text/html"
+    );
     const body = dom.documentElement.querySelector("body");
     
     LightElement.processDomNode(this.#scope, this, body);

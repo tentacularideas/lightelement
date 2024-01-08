@@ -5,7 +5,7 @@ class Test001 extends LightElement {
   static tagName = "test-001";
   static css = ``;
   static html = `
-    {{ this.text }}
+    <p>{{ this.text }}</p>
     `;
     
   text = expectedValue;
@@ -24,7 +24,8 @@ function setup(rootNode) {
 
 function expect(rootNode) {
   const node = rootNode.querySelector(Test001.tagName);
-  let innerHTML = node.innerHTML.trim();
+  const p = node.dom.querySelector("p");
+  let innerHTML = p.innerHTML.trim();
   
   const test1 = innerHTML == expectedValue;
 
@@ -33,7 +34,7 @@ function expect(rootNode) {
   }
 
   node.element.asyncUpdate();
-  innerHTML = node.innerHTML.trim();
+  innerHTML = p.innerHTML.trim();
 
   const test2 = innerHTML == expectedValueAsync;
 
