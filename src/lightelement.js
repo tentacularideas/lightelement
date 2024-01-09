@@ -56,6 +56,10 @@ class Statement {
     this._scope = scope;
   }
 
+  getScope() {
+    return this._scope;
+  }
+
   resolve() {}
 }
 
@@ -75,6 +79,20 @@ class ReturnStatement extends Statement {
 
   resolve() {
     return this.#fn();
+  }
+}
+
+class LetStatement extends ReturnStatement {
+  #variableName;
+
+  constructor(variableName, statement, target = null, scope = null) {
+    super(statement, target, scope);
+    this.#variableName = variableName;
+  }
+
+  resolve() {
+    this._scope.setVariable(this.#variableName, super.resolve());
+    return true;
   }
 }
 
@@ -134,6 +152,26 @@ class DomMutation {
   perform() {}
 }
 
+class NoopDomMutation extends DomMutation {
+  _statement;
+  #firstPass;
+
+  constructor(lightElement, node, statement) {
+    super(lightElement, node);
+    this._statement = statement;
+    this.#firstPass = true;
+  }
+
+  perform() {
+    if (this.#firstPass) {
+      this.#firstPass = false;
+      this._statement.resolve();
+      // ERROR: Ok so scope is here, but also in statement, the up to date one is in statement, how to get it.
+      LightElement.processDomNode(this._statement.getScope(), this._lightElement, this._node, false);
+    }
+  }
+}
+
 class AttributeDomMutation extends DomMutation {
   _attribute;
   _statement;
@@ -176,14 +214,12 @@ class IfDomMutation extends DomMutation {
   _statement;
   _hook;
   _template;
-  _scope;
 
   constructor(lightElement, node, statement) {
     super(lightElement, node);
     this._statement = statement;
     this._template = node;
     this._node = null;
-    this._scope = new Scope(lightElement);
   }
 
   perform() {
@@ -197,7 +233,7 @@ class IfDomMutation extends DomMutation {
 
     if (value && !this._node) {
       this._node = this._template.cloneNode(true);
-      LightElement.processDomNode(this._scope, this._lightElement, this._node, false);
+      LightElement.processDomNode(this._statement.getScope(), this._lightElement, this._node, false);
       this._hook.after(this._node);
     }
 
@@ -212,14 +248,12 @@ class ForDomMutation extends DomMutation {
   _statement;
   _hook;
   _tags;
-  _scope;
 
   constructor(lightElement, node, statement) {
     super(lightElement, node);
     this._statement = statement;
     this._hook = null;
     this._tags = [];
-    this._scope = new Scope(lightElement);
   }
 
   perform() {
@@ -236,7 +270,7 @@ class ForDomMutation extends DomMutation {
 
     for (let item of this._statement.resolve()) {
       const tag = this._node.cloneNode(true);
-      const scope = this._scope.createVariation(this._statement.getVariableName(), item);
+      const scope = this._statement.getScope().createVariation(this._statement.getVariableName(), item);
       LightElement.processDomNode(scope, this._lightElement, tag, false);
 
       if (this._tags.length) {
@@ -446,7 +480,7 @@ class LightElement {
 
       for (let j = 0; j < node.attributes.length; j++) {
         const attribute = node.attributes.item(j);
-        const match = attribute.name.match(/^(?<type>[\*\(\[])(?<name>\w+)[\)\]]?$/);
+        const match = attribute.name.match(/^(?<type>[\*\(\[])(?<name>[\w-]+)[\)\]]?$/);
 
         if (!match) {
           continue;
@@ -492,6 +526,11 @@ class LightElement {
               statement = new ForStatement(attributeValue, leInstance, scope);
               domMutation = new ForDomMutation(leInstance, node, statement);
             }
+            else if (name.startsWith("let-")) {
+              const variable = name.substring(4);
+              statement = new LetStatement(variable, attributeValue, leInstance, scope);
+              domMutation = new NoopDomMutation(leInstance, node, statement);
+            }
             
             break;
           }
@@ -518,9 +557,16 @@ class LightElement {
         node.removeAttribute(attributeName);
         
         if (statement && domMutation) {
-          statement.getDependencies().forEach((variable) => {
-            scope.addMutation(variable, domMutation);
-          });
+          const dependencies = statement.getDependencies();
+
+          if (dependencies.length) {
+            dependencies.forEach((variable) => {
+              scope.addMutation(variable, domMutation);
+            });
+          }
+          else {
+            domMutation.perform();
+          }
         }
       });
     }
