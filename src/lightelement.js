@@ -418,11 +418,13 @@ class LightElement {
   static css = null;
   static html = null;
 
+  #shell;
   #dom;
   #attributesDependencies;
   #scope;
 
   constructor(shell) {
+    this.#shell = shell;
     this.#attributesDependencies = new Map(
       shell ?
       shell.constructor.observedClassMembers.map((attribute) => [attribute, []]) :
@@ -447,6 +449,10 @@ class LightElement {
   
   update(variable = null) {
     this.#scope.update(variable);
+  }
+
+  dispatchEvent(event) {
+    this.#shell.dispatchEvent(event);
   }
 
   static processDomNode(scope, leInstance, node, keepStarUnprocessed = true) {

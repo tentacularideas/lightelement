@@ -19,8 +19,7 @@ class Test003 extends LightElement {
 Test003.register();
 
 function setup(rootNode) {
-  const node = document.createElement(Test003.tagName);
-  rootNode.append(node);
+  rootNode.innerHTML = `<${Test003.tagName} />`;
 }
 
 function expect(rootNode) {
