@@ -166,7 +166,6 @@ class NoopDomMutation extends DomMutation {
     if (this.#firstPass) {
       this.#firstPass = false;
       this._statement.resolve();
-      // ERROR: Ok so scope is here, but also in statement, the up to date one is in statement, how to get it.
       LightElement.processDomNode(this._statement.getScope(), this._lightElement, this._node, false);
     }
   }
@@ -352,8 +351,9 @@ class Scope {
   createStatement(body) {
     const variables = [];
     for (let variable of this.#variables.keys()) {
-      // TODO: Escape "
-      variables.push(`const ${variable} = "${this.#variables.get(variable)}";`);
+      const value = this.#variables.get(variable);
+      let rightPart = JSON.stringify(value).replace(/"/g, "\\\"");
+      variables.push(`const ${variable} = JSON.parse("${rightPart}");`);
     }
     const functionBody = variables.join("") + body;
     return (new Function(functionBody)).bind(this.#instance);
@@ -366,8 +366,9 @@ class Scope {
 
     const variables = [];
     for (let variable of this.#variables.keys()) {
-      // TODO: Escape "
-      variables.push(`const ${variable} = "${this.#variables.get(variable)}";`);
+      const value = this.#variables.get(variable);
+      let rightPart = JSON.stringify(value).replace(/"/g, "\\\"");
+      variables.push(`const ${variable} = JSON.parse("${rightPart}");`);
       dependencies.push(variable);
     }
     const functionBody = variables.join("") + body;

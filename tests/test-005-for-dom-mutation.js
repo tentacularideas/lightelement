@@ -1,5 +1,6 @@
 const expectedValue = ["one", "two", "three"];
 const expectedValueAsync = ["two", "three", "four"];
+const expectedObjects = [{"id": "first"},{"id": "second"},{"id": "third"}];
 class Test005 extends LightElement {
   static tagName = "test-005";
   static css = ``;
@@ -11,10 +12,15 @@ class Test005 extends LightElement {
     <ul class="empty">
       <li *for="let empty of this.noElements">{{ empty }}</li>
     </ul>
+
+    <ul class="objects">
+      <li *for="let obj of this.objects">{{ obj.id }}</li>
+    </ul>
     `;
 
   noElements = [];
   elements = expectedValue;
+  objects = expectedObjects;
 
   asyncUpdate() {
     this.elements = expectedValueAsync;
@@ -46,7 +52,10 @@ function expect(rootNode) {
   const notEmptyLiAsync = Array.from(dom.querySelectorAll("ul.not-empty li"));
   const test3 = notEmptyLiAsync.map((node) => node.innerText).join("") == expectedValueAsync.join("");
 
-  return test1 && test2 && test3;
+  const objects = Array.from(dom.querySelectorAll("ul.objects li"));
+  const test4 = objects.map((node) => node.innerText).join("") == expectedObjects.map((obj) => obj.id).join("");
+
+  return test1 && test2 && test3 && test4;
 }
 
 export {
