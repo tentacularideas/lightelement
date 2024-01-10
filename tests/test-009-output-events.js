@@ -8,7 +8,6 @@ class Test009 extends LightElement {
   text = "Click me!";
 
   emitEvent() {
-    console.log("hey!!");
     this.dispatchEvent(new Event("customEvent"));
   }
 }
@@ -19,7 +18,7 @@ function setup(rootNode) {
   rootNode.innerHTML = `<${Test009.tagName} />`;
 }
 
-function expect(rootNode) {
+async function expect(rootNode) {
   const node = rootNode.querySelector(Test009.tagName);
   let eventReceived = false;
 
@@ -30,7 +29,8 @@ function expect(rootNode) {
   const button = node.dom.querySelector("button");
   button.click();
 
-  // Should wait a few ms
+  // Wait 100ms to ensure event has been dispatched
+  await new Promise(resolve => setTimeout(resolve, 100));
 
   return eventReceived;
 }

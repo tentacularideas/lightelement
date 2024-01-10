@@ -72,12 +72,16 @@
         
         updateTestSummary(testName);
 
-        import(`./${testName}`).then((test) => {
+        import(`./${testName}`).then(async (test) => {
           const rootNode = document.getElementById(testName);
 
           console.groupCollapsed(testName);
+          const startTime = Date.now();
+
           test.setup(rootNode);
-          const success = test.expect(rootNode);
+          const success = await Promise.resolve(test.expect(rootNode));
+
+          console.log(`Executed in ${Date.now() - startTime} ms.`);
           console.groupEnd();
 
           updateTestSummary(testName, success);
