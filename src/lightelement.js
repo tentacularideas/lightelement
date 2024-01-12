@@ -4,9 +4,11 @@ class LightElementShell extends HTMLElement {
   static _attributesMapping = null;
 
   _element;
+  lightElement;
 
   constructor() {
     super();
+    this.lightElement = this;
     this._element = new this.constructor._elementClass(this);
     this.attachShadow({ mode: "open" }).append(this._element.getDom());
   }
@@ -113,7 +115,7 @@ class ForStatement extends Statement {
   }
 
   static #parseStatement(statement) {
-    const matches = statement.match(/^\s*let\s+(?<variable>[a-zA-Z][a-zA-Z0-9_]*)\s+of\s+(?<iterable>[a-zA-Z][a-zA-Z0-9_\.\[\]\'\"]*)\s*$/);
+    const matches = statement.match(/^\s*let\s+(?<variable>[a-zA-Z][a-zA-Z0-9_]*)\s+of\s+(?<iterable>[a-zA-Z][a-zA-Z0-9_\\?.\[\]\'\"]*)\s*$/);
 
     if (!matches) {
       throw new Error(`Invalid *for statement: "${statement}".`);
@@ -182,6 +184,15 @@ class AttributeDomMutation extends DomMutation {
   }
 
   perform() {
+    // Delay attribute mutation if a custom element is not connected yet
+    // Warning: this change can be invoked after a more recent one!
+    if (!this._node.isConnected && !!customElements.get(this._node.tagName.toLowerCase())) {
+      customElements.whenDefined(this._node.tagName.toLowerCase()).then(() => {
+        this.perform();
+      });
+      return;
+    }
+
     const value = this._statement.resolve();
 
     if (value === true) {

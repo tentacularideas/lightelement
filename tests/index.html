@@ -30,6 +30,7 @@
         "test-007-css-mutation.js",
         "test-008-input-attributes.js",
         "test-009-output-events.js",
+        "test-010-object-transfer.js",
       ];
       
       function updateTestSummary(testName, success = undefined) {
@@ -60,7 +61,7 @@
         tdStatus.innerText = success == undefined ? "Running..." : (success ? "Success" : "Failure");
       }
       
-      function run(testName, path = "./") {
+      async function run(testName, path = "./") {
         const rootNode = document.createElement("div");
         rootNode.setAttribute("id", testName);
         
@@ -72,7 +73,7 @@
         
         updateTestSummary(testName);
 
-        import(`./${testName}`).then(async (test) => {
+        return import(`./${testName}`).then(async (test) => {
           const rootNode = document.getElementById(testName);
 
           console.groupCollapsed(testName);
@@ -91,10 +92,17 @@
           }
         });
       }
-      
-      for (let testName of tests) {
-        run(testName);
+
+      async function runTests(tests) {
+        const queue = [...tests];
+
+        while (queue.length) {
+          const test = queue.shift();
+          await run(test);
+        }
       }
+      
+      runTests(tests);
     </script>
   </body>
 </html>
