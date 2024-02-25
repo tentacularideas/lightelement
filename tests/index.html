@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LightElement - Tests</title>
 
-    <script src="../src/lightelement.js"></script>
+    <script src="../dist/lightelement.js" type="module"></script>
   </head>
   <body>
     <h1>Summary</h1>
@@ -31,6 +31,7 @@
         "test-008-input-attributes.js",
         "test-009-output-events.js",
         "test-010-object-transfer.js",
+        "test-011-scope-encapsulation.js",
       ];
       
       function updateTestSummary(testName, success = undefined) {
@@ -68,6 +69,10 @@
         const title = document.createElement("h2");
         title.innerText = `${testName}`;
         rootNode.append(title);
+
+        const playground = document.createElement("div");
+        playground.className = "playground";
+        rootNode.append(playground);
         
         document.body.append(rootNode);
         
@@ -75,12 +80,13 @@
 
         return import(`./${testName}`).then(async (test) => {
           const rootNode = document.getElementById(testName);
+          const playground = rootNode.querySelector("div.playground");
 
           console.groupCollapsed(testName);
           const startTime = Date.now();
 
-          test.setup(rootNode);
-          const success = await Promise.resolve(test.expect(rootNode));
+          test.setup(playground);
+          const success = await Promise.resolve(test.expect(playground));
 
           console.log(`Executed in ${Date.now() - startTime} ms.`);
           console.groupEnd();
