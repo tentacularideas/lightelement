@@ -177,6 +177,7 @@ export class LightElement {
           }
           
           case "(": {
+            // TODO: Handle parameters, how in JS?
             node.addEventListener(name, new Function("event", attributeValue).bind(leInstance));
             
             break;
@@ -221,7 +222,7 @@ export class LightElement {
   
   #createDom() {
     const dom = new DOMParser().parseFromString(
-      `<html><head></head><body><style type="text/css">${this.constructor.css}</style>${this.constructor.html}</body></html>`,
+      `<html><head></head><body><style type="text/css">html,body{padding:0;margin:0;}${this.constructor.css}</style>${this.constructor.html}</body></html>`,
       "text/html"
     );
     const body = dom.documentElement.querySelector("body");
@@ -298,17 +299,7 @@ export class LightElement {
   }
 
   static async load(url) {
-
-    // import?
-    return new Promise((resolve, reject) => {
-      const scriptTag = document.createElement("script");
-      scriptTag.onload = resolve;
-      scriptTag.onerror = reject;
-      scriptTag.async = true;
-      scriptTag.src = url;
-
-      document.body.appendChild(scriptTag);
-    });
+    return import(/* webpackIgnore: true */ url);
   }
 
   static nodeToString(node) {
