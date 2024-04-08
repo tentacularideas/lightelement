@@ -30,18 +30,21 @@ export class LightElementShell extends HTMLElement {
    */
 
   connectedCallback() {
-    this._element.update();
+    this._element.performInit();
   }
 
   disconnectedCallback() {}
   adoptedCallback() {}
 
   attributeChangedCallback(attribute, _, value) {
-    if (value == LightElementShell.NonPrimitiveFlag) {
-      return;
-    }
-
     const internalAttribute = this.constructor._attributesMapping.get(attribute);
-    this._element[internalAttribute] = value;
+
+    if (value != LightElementShell.NonPrimitiveFlag) {
+      this._element[internalAttribute] = value;
+    }
+    
+    if (this._element.isInit()) {
+      this._element.onChange(internalAttribute);
+    }
   }
 }

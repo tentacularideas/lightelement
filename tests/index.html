@@ -32,6 +32,8 @@
         "test-009-output-events.js",
         "test-010-object-transfer.js",
         "test-011-scope-encapsulation.js",
+        "test-012-on-change.js",
+        "test-013-on-init.js",
       ];
       
       function updateTestSummary(testName, success = undefined) {
@@ -78,7 +80,7 @@
         
         updateTestSummary(testName);
 
-        return import(`./${testName}`).then(async (test) => {
+        return import(`./${testName}?${Date.now()}`).then(async (test) => {
           const rootNode = document.getElementById(testName);
           const playground = rootNode.querySelector("div.playground");
 

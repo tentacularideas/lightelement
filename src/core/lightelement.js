@@ -12,12 +12,14 @@ export class LightElement {
 
   #id;
   #shell;
+  #init;
   #dom;
   #attributesDependencies;
   #scope;
 
   constructor(shell) {
     this.#id = LightElement.#nextId++;
+    this.#init = false;
     this.#shell = shell;
     this.#attributesDependencies = new Map(
       shell ?
@@ -29,8 +31,8 @@ export class LightElement {
     // This is the initialization phase where we instantiate the class once to
     // list all of its class members.
     if (this.constructor._registered) {
-        this.#scope = new Scope(this);
-        this.#dom = this.#createDom();
+      this.#scope = new Scope(this);
+      this.#dom = this.#createDom();
     }
   }
 
@@ -61,6 +63,24 @@ export class LightElement {
   dispatchEvent(event) {
     this.#shell.dispatchEvent(event);
   }
+
+  performInit() {
+    if (this.#init) {
+      return;
+    }
+
+    this.#init = true;
+    this.update();
+    this.onInit();
+  }
+
+  isInit() {
+    return this.#init;
+  }
+
+  onInit() {}
+  onDestroy() {}
+  onChange(attributes) {}
 
   static processDomNode(scope, leInstance, node, keepStarUnprocessed = true) {
     const fingerprint = +Date.now();
