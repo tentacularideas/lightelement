@@ -17,7 +17,7 @@ export class ForStatement extends Statement {
   }
 
   static #parseStatement(statement) {
-    const matches = statement.match(/^\s*let\s+(?<variable>[a-zA-Z][a-zA-Z0-9_]*)\s+of\s+(?<iterable>[a-zA-Z][a-zA-Z0-9_\\?.\[\]\'\"]*)\s*$/);
+    const matches = statement.match(/^\s*let\s+(?<variable>[a-zA-Z][a-zA-Z0-9_]*)\s+of\s+(?<iterable>[a-zA-Z][a-zA-Z0-9_\\?.\[\]\(\)\'\"]*)\s*$/);
 
     if (!matches) {
       throw new Error(`Invalid *for statement: "${statement}".`);
