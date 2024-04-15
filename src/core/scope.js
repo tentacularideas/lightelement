@@ -69,7 +69,8 @@ export class Scope {
     return Object.fromEntries(this.#variables.entries());
   }
   
-  createStatement(body) {
+  createStatement(...argsAndBody) {
+    const body = argsAndBody.pop() || "";
     const variables = [];
     for (let variable of this.#variables.keys()) {
       const value = this.#variables.get(variable);
@@ -77,7 +78,7 @@ export class Scope {
       variables.push(`const ${variable} = JSON.parse("${rightPart}");`);
     }
     const functionBody = variables.join("") + body;
-    return (new Function(functionBody)).bind(this.#instance);
+    return (new Function(...argsAndBody, functionBody)).bind(this.#instance);
   }
 
   getDependenciesFromStatement(body) {

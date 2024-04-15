@@ -198,7 +198,7 @@ export class LightElement {
           
           case "(": {
             // TODO: Handle parameters, how in JS?
-            node.addEventListener(name, new Function("event", attributeValue).bind(leInstance));
+            node.addEventListener(name, scope.createStatement(attributeValue));
             
             break;
           }
