@@ -264,6 +264,8 @@ export class LightElement {
       return attribute.toLowerCase();
     });
 
+    const publicMethods = Object.getOwnPropertyNames(this.prototype).filter((key) => key != "constructor" && typeof this.prototype[key] == "function");
+
     const currentClass = class extends this {
       constructor(shell) {
         super(shell);
@@ -293,6 +295,7 @@ export class LightElement {
     const class_ = class extends LightElementShell {
       static _elementClass = currentClass;
       static _attributesMapping = new Map(attributesMapping);
+      static _publicMethods = publicMethods;
 
       static get observedClassMembers() {
         return allVariables;

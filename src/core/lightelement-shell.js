@@ -2,12 +2,14 @@ export class LightElementShell extends HTMLElement {
   static NonPrimitiveFlag = "[le-non-primitive]";
   static _elementClass = null;
   static _attributesMapping = null;
+  static _publicMethods = null;
 
   _element;
 
   constructor() {
     super();
     this._element = new this.constructor._elementClass(this);
+    this.#registerPublicMethods();
     this.attachShadow({ mode: "open" }).append(this._element.getDom());
   }
   
@@ -45,6 +47,12 @@ export class LightElementShell extends HTMLElement {
     
     if (this._element.isInit()) {
       this._element.onChange(internalAttribute);
+    }
+  }
+
+  #registerPublicMethods() {
+    for (let publicMethod of this.constructor._publicMethods || []) {
+      this[publicMethod] = this._element[publicMethod].bind(this._element);
     }
   }
 }
