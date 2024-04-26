@@ -55,6 +55,10 @@ export class LightElement {
   getDom() {
     return this.#dom;
   }
+
+  getHost() {
+    return this.#shell;
+  }
   
   update(variable = null) {
     this.#scope.update(variable);
@@ -198,7 +202,7 @@ export class LightElement {
           
           case "(": {
             // TODO: Handle parameters, how in JS?
-            node.addEventListener(name, scope.createStatement(attributeValue));
+            node.addEventListener(name, scope.createStatement("event", attributeValue));
             
             break;
           }
