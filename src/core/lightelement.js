@@ -14,18 +14,12 @@ export class LightElement {
   #shell;
   #init;
   #dom;
-  #attributesDependencies;
   #scope;
 
   constructor(shell) {
     this.#id = LightElement.#nextId++;
     this.#init = false;
     this.#shell = shell;
-    this.#attributesDependencies = new Map(
-      shell ?
-      shell.constructor.observedClassMembers.map((attribute) => [attribute, []]) :
-      []
-    );
 
     // Avoid DOM parsing when the component has not been registered yet.
     // This is the initialization phase where we instantiate the class once to
