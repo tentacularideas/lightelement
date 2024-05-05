@@ -59,6 +59,11 @@ export class LightElement {
   }
 
   dispatchEvent(event) {
+    // Currently processing event get cloned
+    if (event.eventPhase != 0) {
+      event = new event.constructor(event.type, event);
+    }
+
     this.#shell.dispatchEvent(event);
   }
 
@@ -82,7 +87,7 @@ export class LightElement {
 
   static processDomNode(scope, leInstance, node, keepStarUnprocessed = true) {
     const fingerprint = +Date.now();
-    for(let i = 0; i<1000000; i++) {}
+    //for(let i = 0; i<1000000; i++) {}
 
     console.log(`${fingerprint} - [${leInstance.getTagName()}#${leInstance.getId()}][Scope#${scope.getId()}] Processing node ${LightElement.nodeToString(node)} (stars: ${!keepStarUnprocessed})`);
 
