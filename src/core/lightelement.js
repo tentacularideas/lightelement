@@ -15,11 +15,15 @@ export class LightElement {
   #init;
   #dom;
   #scope;
+  #changes;
+  #performingChanges;
 
   constructor(shell) {
     this.#id = LightElement.#nextId++;
     this.#init = false;
     this.#shell = shell;
+    this.#changes = [];
+    this.#performingChanges = null;
 
     // Avoid DOM parsing when the component has not been registered yet.
     // This is the initialization phase where we instantiate the class once to
@@ -75,6 +79,26 @@ export class LightElement {
     this.#init = true;
     this.update();
     this.onInit();
+  }
+
+  performChange(attribute) {
+    this.#changes.push(attribute);
+
+    if (this.#performingChanges) {
+      return;
+    }
+
+    this.#performingChanges = new Promise(async (resolve, _) => {
+      while (this.#changes.length) {
+        if (this.#changes.length == 1) {
+          this.#performingChanges = null;
+        }
+
+        await this.onChange(this.#changes.shift());
+      }
+
+      resolve();
+    });
   }
 
   isInit() {

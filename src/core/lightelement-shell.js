@@ -46,7 +46,7 @@ export class LightElementShell extends HTMLElement {
     }
     
     if (this._element.isInit()) {
-      this._element.onChange(internalAttribute);
+      this._element.performChange(internalAttribute);
     }
   }
 
