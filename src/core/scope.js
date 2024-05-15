@@ -68,17 +68,28 @@ export class Scope {
   getVariables() {
     return Object.fromEntries(this.#variables.entries());
   }
-  
-  createStatement(...argsAndBody) {
-    const body = argsAndBody.pop() || "";
+
+  #createStatementBody(...body) {
     const variables = [];
+
     for (let variable of this.#variables.keys()) {
       const value = this.#variables.get(variable);
       let rightPart = JSON.stringify(value).replace(/"/g, "\\\"");
       variables.push(`const ${variable} = JSON.parse("${rightPart}");`);
     }
-    const functionBody = variables.join("") + body;
-    return (new Function(...argsAndBody, functionBody)).bind(this.#instance);
+
+    return variables.join("") + body;
+  }
+  
+  createStatement(...argsAndBody) {
+    const body = argsAndBody.pop() || "";
+    return (new Function(...argsAndBody, this.#createStatementBody(body))).bind(this.#instance);
+  }
+
+  createGeneratorStatement(...argsAndBody) {
+    const GeneratorFunction = function*() {}.constructor;
+    const body = argsAndBody.pop() || "";
+    return (new GeneratorFunction(...argsAndBody, this.#createStatementBody(body))).bind(this.#instance);
   }
 
   getDependenciesFromStatement(body) {

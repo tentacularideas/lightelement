@@ -12,8 +12,9 @@ export class ForStatement extends Statement {
     this.#variable = parsedStatement.variable;
     this.#iterable = parsedStatement.iterable;
 
-    const GeneratorFunction = function*() {}.constructor;
-    this.#fn = (new GeneratorFunction(`for (let ${this.#variable} of ${this.#iterable} || []) { yield ${this.#variable}; }`)).bind(this._target);
+    //const GeneratorFunction = function*() {}.constructor;
+    //this.#fn = (new GeneratorFunction(`for (let ${this.#variable} of ${this.#iterable} || []) { yield ${this.#variable}; }`)).bind(this._target);
+    this.#fn = scope.createGeneratorStatement(`for (let ${this.#variable} of ${this.#iterable} || []) { yield ${this.#variable}; }`);
   }
 
   static #parseStatement(statement) {
