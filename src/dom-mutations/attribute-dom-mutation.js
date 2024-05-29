@@ -11,12 +11,13 @@ export class AttributeDomMutation extends DomMutation {
   }
 
   perform() {
-    // Delay attribute mutation if a custom element is not connected yet
-    // Warning: this change can be invoked after a more recent one!
-    if (!this._node.isConnected && !!customElements.get(this._node.tagName.toLowerCase())) {
-      customElements.whenDefined(this._node.tagName.toLowerCase()).then(() => {
-        this.perform();
-      });
+    // Warning: this will not work with not LightElement custom elements.
+    if (this._node.tagName.includes("-") && !this._node.isConnected && !!customElements.get(this._node.tagName.toLowerCase())) {
+      if (!this._node._leDelayedDomMutations) {
+        this._node._leDelayedDomMutations = [];
+      }
+
+      this._node._leDelayedDomMutations.push(this);
       return;
     }
 

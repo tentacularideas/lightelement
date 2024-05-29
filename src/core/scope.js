@@ -132,7 +132,6 @@ export class Scope {
       return;
     }
     
-    console.log(`[Scope#${this.#id}] Variable "${variable}" updated.`);
     const mutations = this.#mutations.get(variable);
     
     if (mutations && mutations.length) {

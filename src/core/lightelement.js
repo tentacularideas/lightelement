@@ -89,14 +89,18 @@ export class LightElement {
     }
 
     this.#performingChanges = new Promise(async (resolve, _) => {
+      console.log(`[${this.getTagName()}#${this.getId()}][Scope#${this.#scope.getId()}] Performing changes...`);
       while (this.#changes.length) {
         if (this.#changes.length == 1) {
           this.#performingChanges = null;
         }
-
+        
+        console.log(`[${this.getTagName()}#${this.getId()}][Scope#${this.#scope.getId()}] Performing change`, this.#changes.at(0));
         await this.onChange(this.#changes.shift());
+        console.log(`[${this.getTagName()}#${this.getId()}][Scope#${this.#scope.getId()}] Changed performed.`);
       }
 
+      console.log(`[${this.getTagName()}#${this.getId()}][Scope#${this.#scope.getId()}] No more changes.`);
       resolve();
     });
   }
@@ -110,10 +114,7 @@ export class LightElement {
   onChange(attributes) {}
 
   static processDomNode(scope, leInstance, node, keepStarUnprocessed = true) {
-    const fingerprint = +Date.now();
-    //for(let i = 0; i<1000000; i++) {}
-
-    console.log(`${fingerprint} - [${leInstance.getTagName()}#${leInstance.getId()}][Scope#${scope.getId()}] Processing node ${LightElement.nodeToString(node)} (stars: ${!keepStarUnprocessed})`);
+    //console.log(`[${leInstance.getTagName()}#${leInstance.getId()}][Scope#${scope.getId()}] Processing node ${LightElement.nodeToString(node)} (stars: ${!keepStarUnprocessed})`);
 
     if (![Node.TEXT_NODE, Node.ELEMENT_NODE].includes(node.nodeType)) {
       return null;
@@ -192,8 +193,6 @@ export class LightElement {
         
         switch (type) {
           case "*": {
-            console.log(`${fingerprint} - [${leInstance.getTagName()}#${leInstance.getId()}][Scope#${scope.getId()}] *${name} = ${attributeValue}`);
-
             if (name == "if") {
               statement = new ReturnStatement(attributeValue, leInstance, scope);
               domMutation = new IfDomMutation(leInstance, node, statement);
@@ -248,23 +247,18 @@ export class LightElement {
       });
     }
 
-    console.log(`${fingerprint} - [${leInstance.getTagName()}#${leInstance.getId()}][Scope#${scope.getId()}] Fully process node ${LightElement.nodeToString(node)}? ${fullyProcessNode ? "yes" : "no"}`);
-
     if (fullyProcessNode) {
       for (let childNode of node.childNodes) {
-        console.log(`${fingerprint} - [${leInstance.getTagName()}#${leInstance.getId()}][Scope#${scope.getId()}] Processing next children of ${LightElement.nodeToString(node)}...`);
-
         // Skip "for-generated" node as the scope won't be the correct one.
         if (childNode.nodeType == Node.ELEMENT_NODE && childNode.hasAttribute("for-generated")) {
-          console.log(`${fingerprint} - [${leInstance.getTagName()}#${leInstance.getId()}][Scope#${scope.getId()}] Skipping for-generated node...`);
           continue;
         }
 
         LightElement.processDomNode(scope, leInstance, childNode, keepStarUnprocessed);
       }
-
-      console.log(`${fingerprint} - [${leInstance.getTagName()}#${leInstance.getId()}][Scope#${scope.getId()}] ${LightElement.nodeToString(node)} children processed.`);
     }
+
+    //console.log(`[${leInstance.getTagName()}#${leInstance.getId()}][Scope#${scope.getId()}] ${LightElement.nodeToString(node)} processed.`);
   }
   
   #createDom() {

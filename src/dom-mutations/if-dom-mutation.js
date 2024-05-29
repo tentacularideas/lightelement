@@ -4,33 +4,30 @@ export class IfDomMutation extends DomMutation {
   _statement;
   _hook;
   _template;
+  #renderedNode;
 
   constructor(lightElement, node, statement) {
     super(lightElement, node);
     this._statement = statement;
     this._template = node;
-    this._node = null;
+    this._node = document.createComment("*if");
+    this._template.replaceWith(this._node);
+    this.#renderedNode = null;
   }
 
   perform() {
-    // TODO: First call, to be optimized
-    if (!this._hook) {
-      this._hook = document.createComment("*if");
-      this._template.replaceWith(this._hook);
-    }
-
     const value = this._statement.resolve();
 
-    if (value && !this._node) {
-      this._node = this._template.cloneNode(true);
+    if (value && !this.#renderedNode) {
+      this.#renderedNode = this._template.cloneNode(true);
       console.log(`[${this._lightElement.getTagName()}#${this._lightElement.getId()}][Scope#${this._statement.getScope().getId()}] Processing if dom mutation...`);
-      LightElement.processDomNode(this._statement.getScope(), this._lightElement, this._node, false);
-      this._hook.after(this._node);
+      LightElement.processDomNode(this._statement.getScope(), this._lightElement, this.#renderedNode, false);
+      this._node.after(this.#renderedNode);
     }
 
-    else if (!value && this._node) {
-      this._node.remove();
-      this._node = null;
+    else if (!value && this.#renderedNode) {
+      this.#renderedNode.remove();
+      this.#renderedNode = null;
     }
   }
 }

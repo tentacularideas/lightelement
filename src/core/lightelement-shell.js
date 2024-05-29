@@ -32,6 +32,12 @@ export class LightElementShell extends HTMLElement {
    */
 
   connectedCallback() {
+    if (this._leDelayedDomMutations) {
+      while (this._leDelayedDomMutations.length) {
+        this._leDelayedDomMutations.shift().perform();
+      }
+    }
+
     this._element.performInit();
   }
 

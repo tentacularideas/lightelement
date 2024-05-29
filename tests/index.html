@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LightElement - Tests</title>
 
-    <script src="../dist/lightelement.js" type="module"></script>
+    <script src="../dist/lightelement.js" onload="start();" type="module"></script>
   </head>
   <body>
     <h1>Summary</h1>
@@ -34,6 +34,7 @@
         "test-011-scope-encapsulation.js",
         "test-012-on-change.js",
         "test-013-on-init.js",
+        "test-014-deep.js",
       ];
       
       function updateTestSummary(testName, success = undefined) {
@@ -109,8 +110,10 @@
           await run(test);
         }
       }
-      
-      runTests(tests);
+
+      function start() {
+        runTests(tests);
+      }
     </script>
   </body>
 </html>
