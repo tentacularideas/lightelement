@@ -224,6 +224,7 @@ export class LightElement {
           
           case "(": {
             // TODO: Handle parameters, how in JS?
+            // async + Promise.resolve() ?
             node.addEventListener(name, scope.createStatement("event", attributeValue));
             
             break;
