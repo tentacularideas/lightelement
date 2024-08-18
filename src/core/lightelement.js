@@ -82,6 +82,7 @@ export class LightElement {
   }
 
   performChange(attribute) {
+    //console.log(`[${this.getTagName()}#${this.getId()}][Scope#${this.#scope.getId()}] Pushing change`, attribute);
     this.#changes.push(attribute);
 
     if (this.#performingChanges) {
@@ -91,16 +92,13 @@ export class LightElement {
     this.#performingChanges = new Promise(async (resolve, _) => {
       console.log(`[${this.getTagName()}#${this.getId()}][Scope#${this.#scope.getId()}] Performing changes...`);
       while (this.#changes.length) {
-        if (this.#changes.length == 1) {
-          this.#performingChanges = null;
-        }
-        
         console.log(`[${this.getTagName()}#${this.getId()}][Scope#${this.#scope.getId()}] Performing change`, this.#changes.at(0));
-        await this.onChange(this.#changes.shift());
+        await Promise.resolve(this.onChange(this.#changes.shift()));
         console.log(`[${this.getTagName()}#${this.getId()}][Scope#${this.#scope.getId()}] Changed performed.`);
       }
 
       console.log(`[${this.getTagName()}#${this.getId()}][Scope#${this.#scope.getId()}] No more changes.`);
+      this.#performingChanges = null;
       resolve();
     });
   }
@@ -111,7 +109,7 @@ export class LightElement {
 
   onInit() {}
   onDestroy() {}
-  onChange(attributes) {}
+  onChange(attribute) {}
 
   static processDomNode(scope, leInstance, node, keepStarUnprocessed = true) {
     //console.log(`[${leInstance.getTagName()}#${leInstance.getId()}][Scope#${scope.getId()}] Processing node ${LightElement.nodeToString(node)} (stars: ${!keepStarUnprocessed})`);
@@ -313,6 +311,8 @@ export class LightElement {
         }
       }
     };
+
+    console.log(currentClass, allVariables, attributes);
 
     const class_ = class extends LightElementShell {
       static _elementClass = currentClass;
