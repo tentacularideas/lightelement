@@ -3,17 +3,32 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LightElement - Logo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wdth,wght@100,200..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    
+    <title>LightElement</title>
 
-    <script src="../src/lightelement.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="../dist/lightelement.js"></script>
+    <script src="./js/light-homepage.js"></script>
     <script src="./js/logo.js"></script>
+    <script src="./js/demo/demo-hello.js"></script>
+    <script src="./js/demo/demo-shapes.js"></script>
+
+    <style type="text/css">
+      :root {
+        --color: #000000;
+        --background-color: #ffffff;
+      }
+
+      body {
+        margin: 0;
+        background-color: var(--background-color);
+      }
+    </style>
   </head>
   <body>
-    <lightelement-logo px="16"></lightelement-logo>
-    <lightelement-logo px="32"></lightelement-logo>
-    <lightelement-logo px="64"></lightelement-logo>
-    <lightelement-logo px="128"></lightelement-logo>
-    <lightelement-logo px="256"></lightelement-logo>
-    <lightelement-logo px="512"></lightelement-logo>
+    <light-homepage></light-homepage>
   </body>
 </html>

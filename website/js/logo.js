@@ -6,7 +6,8 @@ class LightElementLogo extends LightElement {
       position: relative;
       width: {{ this.px }}px;
       height: {{ this.px }}px;
-      border: 1px solid transparent;
+      border: 5px solid #ffffff;
+      filter: drop-shadow(0px 0px 1px #00000077);
       border-radius: {{ Math.round(this.px / 10) }}px;
       overflow: hidden;
     }
@@ -37,58 +38,27 @@ class LightElementLogo extends LightElement {
       transform-origin: bottom right;
       z-index: 10;
     }
-
-    div.beam:nth-child(1 of div.beam) {
-      background-color: #ff7676;
-      transform: rotate(0deg);
-    }
-
-    div.beam:nth-child(2 of div.beam) {
-      background-color: #ff9857;
-      transform: rotate(17deg);
-    }
-
-    div.beam:nth-child(3 of div.beam) {
-      background-color: #ffe961;
-      transform: rotate(27deg);
-    }
-
-    div.beam:nth-child(4 of div.beam) {
-      background-color: #87c056;
-      transform: rotate(39deg);
-    }
-
-    div.beam:nth-child(5 of div.beam) {
-      background-color: #4462c8;
-      transform: rotate(51deg);
-    }
-
-    div.beam:nth-child(6 of div.beam) {
-      background-color: #6642c2;
-      transform: rotate(63deg);
-    }
-
-    div.beam:nth-child(7 of div.beam) {
-      background-color: #aa63d8;
-      transform: rotate(75deg);
-    }
   `;
   static html = `
-    <div class="beam"></div>
-    <div class="beam"></div>
-    <div class="beam"></div>
-    <div class="beam"></div>
-    <div class="beam"></div>
-    <div class="beam"></div>
-    <div class="beam"></div>
+    <div *for="let beam of this._beams" class="beam" [style]="'background-color: ' + beam.color + '; transform: rotate(' + beam.deg + 'deg);'"></div>
     <p>&lt;/&gt;</p>
   `;
 
   px;
+  _beams;
 
   constructor(shell) {
     super(shell);
     this.px ||= "512";
+    this._beams = [
+      {color: "#ff7676", deg: 0},
+      {color: "#ff9857", deg: 17},
+      {color: "#ffe961", deg: 27},
+      {color: "#87c056", deg: 39},
+      {color: "#4462c8", deg: 51},
+      {color: "#6642c2", deg: 63},
+      {color: "#aa63d8", deg: 75},
+    ];
   }
 }
 

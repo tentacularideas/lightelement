@@ -43,11 +43,11 @@ export class LightElement {
   }
 
   getCssTemplate() {
-    return this.constructor.css;
+    return this.constructor.css || "";
   }
 
   getHtmlTemplate() {
-    return this.constructor.html;
+    return this.constructor.html | "";
   }
 
   getDom() {
@@ -59,6 +59,10 @@ export class LightElement {
   }
   
   update(variable = null) {
+    if (!this.#scope) {
+      return;
+    }
+
     this.#scope.update(variable);
   }
 
@@ -312,8 +316,6 @@ export class LightElement {
       }
     };
 
-    console.log(currentClass, allVariables, attributes);
-
     const class_ = class extends LightElementShell {
       static _elementClass = currentClass;
       static _attributesMapping = new Map(attributesMapping);
@@ -364,7 +366,6 @@ export class LightElement {
       return `<!-- ${node.textContent} -->`;
     }
 
-    console.log(node, node.nodeType, node.nodeName);
     return `${node}`;
   }
 }
