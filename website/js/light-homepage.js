@@ -190,6 +190,30 @@ class Homepage extends LightElement {
         </div>
       </div>
     </section>
+    <section>
+      <h2>Events</h2>
+      <p>.... counter ....</p>
+      <div class="example">
+        <div>
+          <h3>JavaScript</h3>
+          <div class="content">
+            <pre><code class="language-javascript">{{ this._demoCounterJs }}</code></pre>
+          </div>
+        </div>
+        <div>
+          <h3>HTML</h3>
+          <div class="content">
+            <pre><code class="language-html">{{ this._demoCounterHtml }}</code></pre>
+          </div>
+        </div>
+        <div>
+          <h3>Output</h3>
+          <div id="demo-counter" class="content">
+            <demo-counter></demo-counter>
+          </div>
+        </div>
+      </div>
+    </section
   </main>
   `;
 
@@ -197,12 +221,16 @@ class Homepage extends LightElement {
   _demoHelloHtml;
   _demoShapesJs;
   _demoShapesHtml;
+  _demoCounterJs;
+  _demoCounterHtml;
 
   async onInit() {
     this._demoHelloJs = await this._getCode("./js/demo/demo-hello.js");
     this._demoHelloHtml = this._getHtmlCode("demo-shapes");
     this._demoShapesJs = await this._getCode("./js/demo/demo-shapes.js");
     this._demoShapesHtml = this._getHtmlCode("demo-shapes");
+    this._demoCounterJs = await this._getCode("./js/demo/demo-counter.js");
+    this._demoCounterHtml = this._getHtmlCode("demo-counter");
 
     Array.from(this.getDom().querySelectorAll("pre > code")).forEach((element) => {
       hljs.highlightElement(element);
