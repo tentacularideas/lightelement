@@ -249,7 +249,21 @@ class Homepage extends LightElement {
       hljs.highlightElement(element);
     });
 
-    // todo, scroll on hashtag
+    this._scrollToSection();
+  }
+
+  _scrollToSection() {
+    if (!document.location.hash.match(/^#[0-9a-z-]+$/)) {
+      return;
+    }
+
+    const target = this.getDom().querySelector(document.location.hash);
+    
+    if (!target) {
+      return;
+    }
+
+    target.parentElement.scrollIntoView();
   }
 
   _getHtmlCode(id) {
