@@ -74,8 +74,14 @@ export class Scope {
 
     for (let variable of this.#variables.keys()) {
       const value = this.#variables.get(variable);
-      let rightPart = JSON.stringify(value).replace(/"/g, "\\\"");
-      variables.push(`const ${variable} = JSON.parse("${rightPart}");`);
+
+      if (value === undefined) {
+        variables.push(`const ${variable} = undefined;`);
+      }
+      else {
+        let rightPart = JSON.stringify(value).replace(/"/g, "\\\"");
+        variables.push(`const ${variable} = JSON.parse("${rightPart}");`);
+      }
     }
 
     return variables.join("") + body;
@@ -100,8 +106,15 @@ export class Scope {
     const variables = [];
     for (let variable of this.#variables.keys()) {
       const value = this.#variables.get(variable);
-      let rightPart = JSON.stringify(value).replace(/"/g, "\\\"");
-      variables.push(`const ${variable} = JSON.parse("${rightPart}");`);
+
+      if (value === undefined) {
+        variables.push(`const ${variable} = undefined;`);
+      }
+      else {
+        let rightPart = JSON.stringify(value).replace(/"/g, "\\\"");
+        variables.push(`const ${variable} = JSON.parse("${rightPart}");`);
+      }
+
       dependencies.push(variable);
     }
     const functionBody = variables.join("") + body;
