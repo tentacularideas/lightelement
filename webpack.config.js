@@ -11,6 +11,12 @@ export default {
   output: {
     path: path.resolve(cwd, "dist"),
     filename: "lightelement.js",
+    library: {
+      name: "LightElement",
+      type: "umd",
+      export: "default",
+    },
+    globalObject: "this",
   },
   optimization: {
     minimize: true,
