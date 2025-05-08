@@ -79,8 +79,7 @@ export class Scope {
         variables.push(`const ${variable} = undefined;`);
       }
       else {
-        let rightPart = JSON.stringify(value).replace(/"/g, "\\\"");
-        variables.push(`const ${variable} = JSON.parse("${rightPart}");`);
+        variables.push(`const ${variable} = JSON.parse(${JSON.stringify(JSON.stringify(value))});`);
       }
     }
 
@@ -111,8 +110,7 @@ export class Scope {
         variables.push(`const ${variable} = undefined;`);
       }
       else {
-        let rightPart = JSON.stringify(value).replace(/"/g, "\\\"");
-        variables.push(`const ${variable} = JSON.parse("${rightPart}");`);
+        variables.push(`const ${variable} = JSON.parse(${JSON.stringify(JSON.stringify(value))});`);
       }
 
       dependencies.push(variable);
